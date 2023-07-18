@@ -1,0 +1,308 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+T = 4000
+NN = 18699640
+print("Общее количество населения - ", NN)
+
+ne = 14; nu = 3; ni = 5; nh = 7; nc = ne; nr = 15; nv = 35;
+ku = 3.18; ki = 0.171
+vh = 0.1; vi = 0.09
+pes = 0.679; peu = 0.154; pei = 0.145; peh = 0.022
+pcv = 0.900; pcu = 0.050; pci = 0.050
+pui = 0.030; pur = 1.0 - pui
+pih = 0.021; pir = 1.0 - pih
+phr = 0.982; phd = 1.0 - phr
+#phr = 1.0; phd = 1.0 - phr
+v = 0.0005
+
+S0 = NN - 140.0; V0 = 0.0; E0 = 140.0; C0 = 0.0; U0 = 0.0; I0 = 0.0; H0 = 0.0; R0 = 0.0; D0 = 0.0
+
+time = [] #  0,1,2, ... T
+time.append(0)
+time_today = []
+################################################--DISCRETE_MODEL--##############################################################
+S_dis = [];       E_dis = [];       U_dis = [];       I_dis = [];       H_dis = [];       R_dis = [];        D_dis = [];       V_dis = [];       C_dis = []; 
+S_dis_today = []; E_dis_today = []; U_dis_today = []; I_dis_today = []; H_dis_today = []; R_dis_today = [];  D_dis_today = []; V_dis_today = []; C_dis_today = [];
+S_dis.append(S0); E_dis.append(E0); U_dis.append(U0); I_dis.append(I0); H_dis.append(H0); R_dis.append(R0);  D_dis.append(D0); V_dis.append(V0); C_dis.append(C0); 
+
+UIH_dis_today = [];                                     IHRD_dis = [];                                              UIHRD_dis = []
+UIH_dis_today.append(U_dis[0] + I_dis[0] + H_dis[0]);   IHRD_dis.append(I_dis[0] + H_dis[0] + R_dis[0] + D_dis[0]); UIHRD_dis.append(U_dis[0] +I_dis[0] + H_dis[0] + R_dis[0] + D_dis[0])
+UIH_dis_sum = []; 
+
+e1 = []; e_ne = []; c1 = []; c_nc = []; u1 = []; u_nu = []; i1 = []; i_ni = []; h1 = []; h_nh = []; 
+r1 = []; r_nr = []; v1 = []; v_nv = []; 
+
+u1.append(U0 / nu); i1.append(I0 / ni); e1.append(E0 / ne); h1.append(H0 / nh); c1.append(C0 / nc);
+r1.append(R0 / nr); v1.append(V0 / nv);
+
+sum_uih_dis = 0
+max_dis = 0
+check_dis = False
+maxind_dis = 0
+endind_dis = 0
+for i in range(1, T+1):
+    time.append(i)
+    time_today.append(i)
+
+    if i - ne < 0:
+        e_ne.append(e1[0])
+    else:
+        e_ne.append(e1[i - ne])
+    if i - nc < 0:
+        c_nc.append(c1[0])
+    else:
+        c_nc.append(c1[i - nc])
+    if i - nu < 0:
+        u_nu.append(u1[0])
+    else:
+        u_nu.append(u1[i - nu])
+    if i - ni < 0:
+        i_ni.append(i1[0])
+    else:
+        i_ni.append(i1[i - ni])
+    if i - nh < 0:
+        h_nh.append(h1[0])
+    else:
+        h_nh.append(h1[i - nh])
+    
+    if i - nr < 0:
+        r_nr.append(r1[0])
+    else:
+        r_nr.append(r1[i - nr])
+    if i - nv < 0:
+        v_nv.append(v1[0])
+    else:
+        v_nv.append(v1[i - nv])
+       
+    e1.append(S_dis[i-1] * (ku * U_dis[i-1] + ki * I_dis[i-1]) / NN)
+    c1.append(V_dis[i-1] * (ku * U_dis[i-1] + ki * I_dis[i-1]) / NN)
+    u1.append(peu * e_ne[i-1] + pcu * c_nc[i-1])
+    i1.append(pei * e_ne[i-1] + pci * c_nc[i-1] + pui * u_nu[i-1])
+    h1.append(peh * e_ne[i-1] + pih * i_ni[i-1])
+    r1.append(pur * u_nu[i-1] + pir * i_ni[i-1] + phr * h_nh[i-1])
+    v1.append((vh * H_dis[i-1] + vi * I_dis[i-1]) / NN * S_dis[i-1] + pcv * c_nc[i-1] - V_dis[i-1] * (ku * U_dis[i-1] + ki * I_dis[i-1]) / NN)
+    #'''
+    S_dis.append(S_dis[i-1] - S_dis[i-1] * ((vh * H_dis[i-1] + vi * I_dis[i-1]) / NN + (ku * U_dis[i-1] + ki * I_dis[i-1]) / NN) + pes * e_ne[i-1] + r_nr[i-1] + v_nv[i-1])
+    E_dis.append(E_dis[i-1] + e1[i] - e_ne[i-1])
+    U_dis.append(U_dis[i-1] + u1[i] - u_nu[i-1])
+    I_dis.append(I_dis[i-1] + i1[i] - i_ni[i-1])
+    H_dis.append(H_dis[i-1] + h1[i] - h_nh[i-1])
+    R_dis.append(R_dis[i-1] - r_nr[i-1] + pur * u_nu[i-1] + pir * i_ni[i-1] + phr * h_nh[i-1])
+    D_dis.append(D_dis[i-1] + phd * h_nh[i-1])
+    V_dis.append(V_dis[i-1] + S_dis[i-1] * (vh * H_dis[i-1] + vi * I_dis[i-1]) / NN - V_dis[i-1] * (ku * U_dis[i-1] + ki * I_dis[i-1]) / NN + pcv * c_nc[i-1] - v_nv[i-1])
+    C_dis.append(C_dis[i-1] + c1[i] - c_nc[i-1])
+    #'''
+    '''
+    S_dis.append(S_dis[i-1] - S_dis[i-1] * (v + (ku * U_dis[i-1] + ki * I_dis[i-1]) / NN) + pes * e_ne[i-1])
+    E_dis.append(E_dis[i-1] + e1[i] - e_ne[i-1])
+    U_dis.append(U_dis[i-1] + u1[i] - u_nu[i-1])
+    I_dis.append(I_dis[i-1] + i1[i] - i_ni[i-1])
+    H_dis.append(H_dis[i-1] + h1[i] - h_nh[i-1])
+    R_dis.append(R_dis[i-1] + pur * u_nu[i-1] + pir * i_ni[i-1] + phr * h_nh[i-1])
+    D_dis.append(D_dis[i-1] + phd * h_nh[i-1])
+    V_dis.append(V_dis[i-1] + v * S_dis[i-1] - V_dis[i-1] * (ku * U_dis[i-1] + ki * I_dis[i-1]) / NN + pcv * c_nc[i-1])
+    C_dis.append(C_dis[i-1] + c1[i] - c_nc[i-1])
+    '''
+    S_dis_today.append(S_dis[i] - S_dis[i-1]);
+    E_dis_today.append(E_dis[i] - E_dis[i-1]);
+    U_dis_today.append(U_dis[i] - U_dis[i-1]);
+    I_dis_today.append(I_dis[i] - I_dis[i-1]);
+    H_dis_today.append(H_dis[i] - H_dis[i-1]);
+    R_dis_today.append(R_dis[i] - R_dis[i-1]);
+    D_dis_today.append(D_dis[i] - D_dis[i-1]);
+    V_dis_today.append(V_dis[i] - V_dis[i-1]);
+    C_dis_today.append(C_dis[i] - C_dis[i-1]);
+    
+    UIH_dis_today.append(U_dis[i] + I_dis[i] + H_dis[i])
+    
+    IHRD_dis.append(I_dis[i] + H_dis[i] + R_dis[i] + D_dis[i])
+    UIHRD_dis.append(U_dis[i] + I_dis[i] + H_dis[i] + R_dis[i] + D_dis[i])
+
+    sum_uih_dis = sum_uih_dis + U_dis[i] + I_dis[i] + H_dis[i]
+    UIH_dis_sum.append(sum_uih_dis)
+    
+    if UIH_dis_today[i]>max_dis:
+        max_dis = UIH_dis_today[i]
+        maxind_dis = i
+    if check_dis==False and UIH_dis_today[i]<1 and i>400:
+        endind_dis = i
+        check_dis=True
+        
+print("--------Дискретная модель--------")
+print("Общее чило заболевших - ", int(IHRD_dis[T-1]),", ", format(IHRD_dis[T-1]*100/NN, '.2f'), "% от общего числа населения")
+print("Общее чило выздоровевших - ", int(R_dis[T-1]), ", ", format(R_dis[T-1]*100/IHRD_dis[T-1], '.2f'), "% от общего числа заболевших") 
+print("Общее чило умерших - ", int(D_dis[T-1]), ", ", format(D_dis[T-1]*100/IHRD_dis[T-1], '.2f'), "% от общего числа заболевших")
+print("Максимальное количество единовременно болеющих - ", int(max_dis),", ", format(max_dis*100/NN, '.2f'), "% от общего числа населения")
+print("Время пика эпидемии - ", int(maxind_dis))
+print("Время завершения эпидемии - ", endind_dis)
+
+
+################################################--CONTINUOUS_MODEL--###########################################################
+S_cont = [];           E_cont = [];           U_cont = [];           I_cont = [];           H_cont = []; 
+S_cont.append(S0);     E_cont.append(E0);     U_cont.append(U0);     I_cont.append(I0);     H_cont.append(H0);   
+S_cont_vis = [];       E_cont_vis = [];       U_cont_vis = [];       I_cont_vis = [];       H_cont_vis = []; 
+S_cont_vis.append(S0); E_cont_vis.append(E0); U_cont_vis.append(U0); I_cont_vis.append(I0); H_cont_vis.append(H0); 
+S_cont_vis_today = []; E_cont_vis_today = []; U_cont_vis_today = []; I_cont_vis_today = []; H_cont_vis_today = [];  
+
+R_cont = [];           D_cont = [];           V_cont = [];           C_cont = [];
+R_cont.append(R0);     D_cont.append(D0);     V_cont.append(V0);     C_cont.append(C0);    
+R_cont_vis = [];       D_cont_vis = [];       V_cont_vis = [];       C_cont_vis = []; 
+R_cont_vis.append(R0); D_cont_vis.append(D0); V_cont_vis.append(V0); C_cont_vis.append(C0); 
+R_cont_vis_today = []; D_cont_vis_today = []; V_cont_vis_today = []; C_cont_vis_today = [];
+
+UIH_cont_sum = [];
+UIH_cont_vis_today = []
+
+IHRD_cont_vis=[];              UIHRD_cont_vis=[];
+
+t0 = 0
+points = 100
+h = 1./points
+
+def f(y, x, a, b):
+    return a*y + b
+
+sum_uih_cont=0
+max_cont=0
+check_cont = False
+maxind_cont = 0
+endind_cont = 0
+for i in range(1, T*points+1):
+    # S
+    kS1 = h * f(S_cont[i-1],             t0,           - (vh * H_cont[i-1] + vi * I_cont[i-1]) / NN - (ku * U_cont[i-1] + ki * I_cont[i-1]) / NN, pes * E_cont[i-1] / ne + R_cont[i-1] / nr + V_cont[i-1] / nv);
+    kS2 = h * f(S_cont[i-1] + kS1 / 2.0, t0 + h / 2.0, - (vh * H_cont[i-1] + vi * I_cont[i-1]) / NN - (ku * U_cont[i-1] + ki * I_cont[i-1]) / NN, pes * E_cont[i-1] / ne + R_cont[i-1] / nr + V_cont[i-1] / nv);
+    kS3 = h * f(S_cont[i-1] + kS2 / 2.0, t0 + h / 2.0, - (vh * H_cont[i-1] + vi * I_cont[i-1]) / NN - (ku * U_cont[i-1] + ki * I_cont[i-1]) / NN, pes * E_cont[i-1] / ne + R_cont[i-1] / nr + V_cont[i-1] / nv);
+    kS4 = h * f(S_cont[i-1] + kS3,       t0 + h,       - (vh * H_cont[i-1] + vi * I_cont[i-1]) / NN - (ku * U_cont[i-1] + ki * I_cont[i-1]) / NN, pes * E_cont[i-1] / ne + R_cont[i-1] / nr + V_cont[i-1] / nv);
+    S_cont.append(S_cont[i-1] + (kS1 + 2.0 * kS2 + 2.0 * kS3 + kS4) / 6.0);
+    # V
+    kV1 = h * f(V_cont[i-1],             t0,           -(ku * U_cont[i-1] + ki * I_cont[i-1]) / NN - 1. / nv, ((vh * H_cont[i-1] + vi * I_cont[i-1]) / NN) * S_cont[i-1] + pcv * C_cont[i-1] / nc);
+    kV2 = h * f(V_cont[i-1] + kV1 / 2.0, t0 + h / 2.0, -(ku * U_cont[i-1] + ki * I_cont[i-1]) / NN - 1. / nv, ((vh * H_cont[i-1] + vi * I_cont[i-1]) / NN) * S_cont[i-1] + pcv * C_cont[i-1] / nc);
+    kV3 = h * f(V_cont[i-1] + kV2 / 2.0, t0 + h / 2.0, -(ku * U_cont[i-1] + ki * I_cont[i-1]) / NN - 1. / nv, ((vh * H_cont[i-1] + vi * I_cont[i-1]) / NN) * S_cont[i-1] + pcv * C_cont[i-1] / nc);
+    kV4 = h * f(V_cont[i-1] + kV3,       t0 + h,       -(ku * U_cont[i-1] + ki * I_cont[i-1]) / NN - 1. / nv, ((vh * H_cont[i-1] + vi * I_cont[i-1]) / NN) * S_cont[i-1] + pcv * C_cont[i-1] / nc);
+    V_cont.append(V_cont[i-1] + (kV1 + 2.0 * kV2 + 2.0 * kV3 + kV4) / 6.0);
+    # E
+    kE1 = h * f(E_cont[i-1],             t0,           -1. / ne, S_cont[i-1] * (ku*U_cont[i-1] + ki * I_cont[i-1]) / NN);
+    kE2 = h * f(E_cont[i-1] + kE1 / 2.0, t0 + h / 2.0, -1. / ne, S_cont[i-1] * (ku*U_cont[i-1] + ki * I_cont[i-1]) / NN);
+    kE3 = h * f(E_cont[i-1] + kE2 / 2.0, t0 + h / 2.0, -1. / ne, S_cont[i-1] * (ku*U_cont[i-1] + ki * I_cont[i-1]) / NN);
+    kE4 = h * f(E_cont[i-1] + kE3,       t0 + h,       -1. / ne, S_cont[i-1] * (ku*U_cont[i-1] + ki * I_cont[i-1]) / NN);
+    E_cont.append(E_cont[i-1] + (kE1 + 2.0 * kE2 + 2.0 * kE3 + kE4) / 6.0);
+    # C
+    kC1 = h * f(C_cont[i-1],             t0,           -1. / nc, V_cont[i-1] * (ku*U_cont[i-1] + ki * I_cont[i-1]) / NN);
+    kC2 = h * f(C_cont[i-1] + kC1 / 2.0, t0 + h / 2.0, -1. / nc, V_cont[i-1] * (ku*U_cont[i-1] + ki * I_cont[i-1]) / NN);
+    kC3 = h * f(C_cont[i-1] + kC2 / 2.0, t0 + h / 2.0, -1. / nc, V_cont[i-1] * (ku*U_cont[i-1] + ki * I_cont[i-1]) / NN);
+    kC4 = h * f(C_cont[i-1] + kC3,       t0 + h,       -1. / nc, V_cont[i-1] * (ku*U_cont[i-1] + ki * I_cont[i-1]) / NN);
+    C_cont.append(C_cont[i-1] + (kC1 + 2.0 * kC2 + 2.0 * kC3 + kC4) / 6.0);
+    # U
+    kU1 = h * f(U_cont[i-1],             t0,           -1. / nu, peu * E_cont[i-1] / ne + pcu * C_cont[i-1] / nc);
+    kU2 = h * f(U_cont[i-1] + kU1 / 2.0, t0 + h / 2.0, -1. / nu, peu * E_cont[i-1] / ne + pcu * C_cont[i-1] / nc);
+    kU3 = h * f(U_cont[i-1] + kU2 / 2.0, t0 + h / 2.0, -1. / nu, peu * E_cont[i-1] / ne + pcu * C_cont[i-1] / nc);
+    kU4 = h * f(U_cont[i-1] + kU3,       t0 + h,       -1. / nu, peu * E_cont[i-1] / ne + pcu * C_cont[i-1] / nc);
+    U_cont.append(U_cont[i-1] + (kU1 + 2.0 * kU2 + 2.0 * kU3 + kU4) / 6.0);
+    # I
+    kI1 = h * f(I_cont[i-1],             t0,           -1. / ni, (pei * E_cont[i-1] / ne + pui * U_cont[i-1] / nu + pci * C_cont[i-1] / nc));
+    kI2 = h * f(I_cont[i-1] + kI1 / 2.0, t0 + h / 2.0, -1. / ni, (pei * E_cont[i-1] / ne + pui * U_cont[i-1] / nu + pci * C_cont[i-1] / nc));
+    kI3 = h * f(I_cont[i-1] + kI2 / 2.0, t0 + h / 2.0, -1. / ni, (pei * E_cont[i-1] / ne + pui * U_cont[i-1] / nu + pci * C_cont[i-1] / nc));
+    kI4 = h * f(I_cont[i-1] + kI3,       t0 + h,       -1. / ni, (pei * E_cont[i-1] / ne + pui * U_cont[i-1] / nu + pci * C_cont[i-1] / nc));
+    I_cont.append(I_cont[i-1] + (kI1 + 2.0 * kI2 + 2.0 * kI3 + kI4) / 6.0);
+    # H
+    kH1 = h * f(H_cont[i-1],             t0,           -1. / nh, (peh * E_cont[i-1] / ne + pih * I_cont[i-1] / ni));
+    kH2 = h * f(H_cont[i-1] + kH1 / 2.0, t0 + h / 2.0, -1. / nh, (peh * E_cont[i-1] / ne + pih * I_cont[i-1] / ni));
+    kH3 = h * f(H_cont[i-1] + kH2 / 2.0, t0 + h / 2.0, -1. / nh, (peh * E_cont[i-1] / ne + pih * I_cont[i-1] / ni));
+    kH4 = h * f(H_cont[i-1] + kH3,       t0 + h,       -1. / nh, (peh * E_cont[i-1] / ne + pih * I_cont[i-1] / ni));
+    H_cont.append(H_cont[i-1] + (kH1 + 2.0 * kH2 + 2.0 * kH3 + kH4) / 6.0);
+    # R
+    kR1 = h * f(R_cont[i-1],             t0,          - 1. / nr, (pur * U_cont[i-1] / nu + pir * I_cont[i-1] / ni + phr * H_cont[i-1] / nh));
+    kR2 = h * f(R_cont[i-1] + kR1 / 2.0, t0 + h / 2., - 1. / nr, (pur * U_cont[i-1] / nu + pir * I_cont[i-1] / ni + phr * H_cont[i-1] / nh));
+    kR3 = h * f(R_cont[i-1] + kR2 / 2.0, t0 + h / 2., - 1. / nr, (pur * U_cont[i-1] / nu + pir * I_cont[i-1] / ni + phr * H_cont[i-1] / nh));
+    kR4 = h * f(R_cont[i-1] + kR3,       t0 + h,      - 1. / nr, (pur * U_cont[i-1] / nu + pir * I_cont[i-1] / ni + phr * H_cont[i-1] / nh));
+    R_cont.append(R_cont[i-1] + (kR1 + 2.0 * kR2 + 2.0 * kR3 + kR4) / 6.0);
+    # D
+    kD1 = h * f(D_cont[i-1],             t0,           0., phd * H_cont[i-1] / nh);
+    kD2 = h * f(D_cont[i-1] + kD1 / 2.0, t0 + h / 2.0, 0., phd * H_cont[i-1] / nh);
+    kD3 = h * f(D_cont[i-1] + kD2 / 2.0, t0 + h / 2.0, 0., phd * H_cont[i-1] / nh);
+    kD4 = h * f(D_cont[i-1] + kD3,       t0 + h,       0., phd * H_cont[i-1] / nh);
+    D_cont.append(D_cont[i-1] + (kD1 + 2.0 * kD2 + 2.0 * kD3 + kD4) / 6.0);
+    
+    if i%points==0:
+        S_cont_vis.append(S_cont[i])
+        E_cont_vis.append(E_cont[i])
+        C_cont_vis.append(C_cont[i])
+        U_cont_vis.append(U_cont[i])
+        I_cont_vis.append(I_cont[i])
+        H_cont_vis.append(H_cont[i])
+        R_cont_vis.append(R_cont[i])
+        D_cont_vis.append(D_cont[i])
+        V_cont_vis.append(V_cont[i])
+        
+        S_cont_vis_today.append(S_cont[i] - S_cont[i-points])
+        E_cont_vis_today.append(E_cont[i] - E_cont[i-points])
+        C_cont_vis_today.append(C_cont[i] - C_cont[i-points])
+        U_cont_vis_today.append(U_cont[i] - U_cont[i-points])
+        I_cont_vis_today.append(I_cont[i] - I_cont[i-points])
+        H_cont_vis_today.append(H_cont[i] - H_cont[i-points])
+        R_cont_vis_today.append(R_cont[i] - R_cont[i-points])
+        D_cont_vis_today.append(D_cont[i] - D_cont[i-points])
+        V_cont_vis_today.append(V_cont[i] - V_cont[i-points])
+        
+        IHRD_cont_vis.append(I_cont[i] + H_cont[i] + R_cont[i] + D_cont[i])
+        UIHRD_cont_vis.append(U_cont[i] + I_cont[i] + H_cont[i] + R_cont[i] + D_cont[i])
+        
+        UIH_cont_vis_today.append(U_cont[i] + I_cont[i] + H_cont[i])
+        
+        uih_cont = U_cont[i] + I_cont[i] + H_cont[i]
+        sum_uih_cont = sum_uih_cont + uih_cont
+        UIH_cont_sum.append(sum_uih_cont)
+
+        if uih_cont>max_cont:
+            max_cont=uih_cont
+            maxind_cont=i
+    uih_cont2 = U_cont[i] + I_cont[i] + H_cont[i]
+    if check_cont==False and uih_cont2<1 and i>400*points:
+        endind_cont = i
+        check_cont=True
+        
+    t0 = t0 + h
+
+print("--------Непрерывная модель--------")
+print("Общее чило заболевших - ", int(IHRD_cont_vis[T-1]),", ", format(IHRD_cont_vis[T-1]*100/NN, '.2f'), "% от общего числа населения")
+print("Общее чило выздоровевших - ", int(R_cont_vis[T-1]), ", ", format(R_cont_vis[T-1]*100/IHRD_cont_vis[T-1], '.2f'), "% от общего числа заболевших") 
+print("Общее чило умерших - ", int(D_cont_vis[T-1]), ", ", format(D_cont_vis[T-1]*100/IHRD_cont_vis[T-1], '.2f'), "% от общего числа заболевших")
+print("Максимальное количество единовременно болеющих - ", int(max_cont),", ", format(max_cont*100/NN, '.2f'), "% от общего числа населения")
+print("Время пика эпидемии - ", int(maxind_cont/points))
+print("Время завершения эпидемии - ", int(endind_cont/points))
+
+#####################################################--VISUALIZE--#############################################################
+# 1
+
+plt.figure(figsize=(24, 18), facecolor='white')
+plt.subplot(5,3,1); plt.plot(time, S_dis, color = 'r'); plt.plot(time, S_cont_vis, color = 'b'); plt.ylabel('S', fontsize=20, color='black')
+plt.subplot(5,3,2); plt.plot(time, E_dis, color = 'r'); plt.plot(time, E_cont_vis, color = 'b'); plt.ylabel('E', fontsize=15, color='black')
+plt.subplot(5,3,3); plt.plot(time, U_dis, color = 'r'); plt.plot(time, U_cont_vis, color = 'b'); plt.ylabel('U', fontsize=20, color='black')
+plt.subplot(5,3,4); plt.plot(time, I_dis, color = 'r'); plt.plot(time, I_cont_vis, color = 'b'); plt.ylabel('I', fontsize=20, color='black')
+plt.subplot(5,3,5); plt.plot(time, H_dis, color = 'r'); plt.plot(time, H_cont_vis, color = 'b'); plt.ylabel('H', fontsize=20, color='black')
+plt.subplot(5,3,6); plt.plot(time, R_dis, color = 'r'); plt.plot(time, R_cont_vis, color = 'b'); plt.ylabel('R', fontsize=20, color='black')
+plt.subplot(5,3,7); plt.plot(time, D_dis, color = 'r'); plt.plot(time, D_cont_vis, color = 'b'); plt.ylabel('D', fontsize=20, color='black')
+plt.subplot(5,3,8); plt.plot(time, V_dis, color = 'r'); plt.plot(time, V_cont_vis, color = 'b'); plt.ylabel('V', fontsize=20, color='black')
+plt.subplot(5,3,9); plt.plot(time, C_dis, color = 'r'); plt.plot(time, C_cont_vis, color = 'b'); plt.ylabel('С', fontsize=20, color='black')
+plt.savefig('qwerty.png')
+plt.show()
+# 2
+plt.figure(figsize=(24, 18))
+#plt.subplot(5,3,1); plt.plot(time_today, S_dis_today, color = 'r'); plt.plot(time_today, S_cont_vis_today, color = 'b'); plt.ylabel('S', fontsize=20, color='black')
+#plt.subplot(5,3,2); plt.plot(time_today, E_dis_today, color = 'r'); plt.plot(time_today, E_cont_vis_today, color = 'b'); plt.ylabel('E', fontsize=15, color='black')
+#plt.subplot(5,3,3); plt.plot(time_today, U_dis_today, color = 'r'); plt.plot(time_today, U_cont_vis_today, color = 'b'); plt.ylabel('U', fontsize=20, color='black')
+#plt.subplot(5,3,4); plt.plot(time_today, I_dis_today, color = 'r'); plt.plot(time_today, I_cont_vis_today, color = 'b'); plt.ylabel('I', fontsize=20, color='black')
+#plt.subplot(5,3,5); plt.plot(time_today, H_dis_today, color = 'r'); plt.plot(time_today, H_cont_vis_today, color = 'b'); plt.ylabel('H', fontsize=20, color='black')
+#plt.subplot(5,3,6); plt.plot(time_today, C_dis_today, color = 'r'); plt.plot(time_today, C_cont_vis_today, color = 'b'); plt.ylabel('С', fontsize=20, color='black')
+plt.subplot(5,3,7); plt.plot(time_today, V_dis_today, color = 'r'); plt.plot(time_today, V_cont_vis_today, color = 'b'); plt.ylabel('V (в данный момент)', fontsize=20, color='black')
+plt.subplot(5,3,8); plt.plot(time_today, R_dis_today, color = 'r'); plt.plot(time_today, R_cont_vis_today, color = 'b'); plt.ylabel('R (в данный момент)', fontsize=20, color='black')
+plt.subplot(5,3,9); plt.plot(time_today, D_dis_today, color = 'r'); plt.plot(time_today, D_cont_vis_today, color = 'b'); plt.ylabel('D (в данный момент)', fontsize=20, color='black')
+# 3
+plt.figure(figsize=(24, 18), facecolor='white')
+plt.subplot(5,3,1); plt.plot(time, UIH_dis_today, color = 'r');     plt.plot(time_today, UIH_cont_vis_today, color = 'b'); plt.ylabel('UIH (в данный момент)', fontsize=15, color='black')
+plt.subplot(5,3,2); plt.plot(time_today, UIH_dis_sum, color = 'r'); plt.plot(time_today, UIH_cont_sum, color = 'b');       plt.ylabel('UIH (к данному моменту)', fontsize=15, color='black')
+# 4
+plt.figure(figsize=(24, 18), facecolor='white')
+plt.subplot(5,3,1); plt.plot(time, IHRD_dis, color = 'r');          plt.plot(time_today,  IHRD_cont_vis, color = 'b');     plt.ylabel('IHRD (к данному моменту)', fontsize=15, color='black')
+plt.subplot(5,3,2); plt.plot(time, UIHRD_dis, color = 'r');         plt.plot(time_today, UIHRD_cont_vis, color = 'b');     plt.ylabel('UIHRD (к данному моменту)', fontsize=15, color='black')
